@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+        context: backend
+        dockerfile: prod/nginx.docker
+    volumes:
+       - ./src:/var/www/
+    ports:
+        - "8080:80"
+    depends_on:
+        - php-fpm
+
+  php-fpm:
+    build:
+        context: backend
+        dockerfile: prod/php-fpm.docker
+    volumes:
+       - ./src:/var/www/
+    depends_on:
+      - database
+      - mailer
+    environment:
+        - "DB_PORT=3306"
+        - "DB_HOST=mysql"
+
+  php-cli:
+    restart: unless-stopped
+    build:
+      context: backend
+      dockerfile: prod/php-cli.docker
+    volumes:
+      - ./src:/var/www/
+    depends_on:
+      - database
+      - mailer
+    environment:
+        - "DB_PORT=3306"
+        - "DB_HOST=mysql"
+    tty: true
+
+
+  mysql:
+      image: 'mysql/mysql-server:8.0'
+      restart: unless-stopped
+      volumes:
+          - 'storage-mysqlprod:/var/lib/mysql'
+      environment:
+          - "MYSQL_ROOT_PASSWORD=secret"
+          - "MYSQL_USER=app"
+          - "MYSQL_PASSWORD=secret"
+          - "MYSQL_DATABASE=app"
+
+volumes:
+    storage-mysqlprod: {}
